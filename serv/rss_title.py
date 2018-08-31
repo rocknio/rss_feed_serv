@@ -40,7 +40,8 @@ class RssTitleHandler(BaseHttpHandler):
                                                         one_content.published_parsed[1],
                                                         one_content.published_parsed[2],
                                                         one_content.published_parsed[3],
-                                                        one_content.published_parsed[4])
+                                                        one_content.published_parsed[4]),
+                    "desc": one_content.description
                 })
 
             self.rss_title_list[feed_name.upper()]['timestamp'] = datetime.datetime.now()
