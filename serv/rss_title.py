@@ -31,10 +31,7 @@ class RssTitleHandler(BaseHttpHandler):
         if feed_url:
             rss_info = feedparser.parse(feed_url)
             for one_content in rss_info["entries"]:
-                if feed_name.upper() == 'CNBETA':
-                    link = "https://m.cnbeta.com/view/" + str(one_content.link)[str(one_content.link).rfind('/') + 1:]
-                else:
-                    link = one_content.link
+                link = one_content.link
                 self.rss_title_list[feed_name.upper()]["title_list"].append({
                     "title": one_content.title,
                     "link": link,
