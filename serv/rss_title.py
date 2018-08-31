@@ -24,30 +24,50 @@ class RssTitleHandler(BaseHttpHandler):
         }
     }
 
+    def refresh_rss(self, feed_name):
+        self.rss_title_list[feed_name.upper()]["title_list"].clear()
+
+        feed_url = Cfg.get(feed_name.upper(), None)
+        if feed_url:
+            rss_info = feedparser.parse(feed_url)
+            for one_content in rss_info["entries"]:
+                if feed_name.upper() == 'CNBETA':
+                    link = "https://m.cnbeta.com/view/" + str(one_content.link)[str(one_content.link).rfind('/') + 1:]
+                else:
+                    link = one_content.link
+                self.rss_title_list[feed_name.upper()]["title_list"].append({
+                    "title": one_content.title,
+                    "link": link,
+                    "icon": feed_name,
+                    "pub_time": "{}-{}-{} {}:{}".format(one_content.published_parsed[0],
+                                                        one_content.published_parsed[1],
+                                                        one_content.published_parsed[2],
+                                                        one_content.published_parsed[3],
+                                                        one_content.published_parsed[4])
+                })
+
+            self.rss_title_list[feed_name.upper()]['timestamp'] = datetime.datetime.now()
+
     @asynchronous
     @engine
-    def get(self, feed_name, start_idx=0, end_idx=20):
+    def get(self, feed_name, param):
         try:
-            if self.rss_title_list[feed_name.upper()]["timestamp"] is None or (datetime.datetime.now() - self.rss_title_list[feed_name.upper()]["timestamp"]).seconds > (10 * 60):
-                feed_url = Cfg.get(feed_name.upper(), None)
-                if feed_url:
-                    rss_info = feedparser.parse(feed_url)
-                    for one_content in rss_info["entries"]:
-                        if feed_name.upper() == 'CNBETA':
-                            link = "https://m.cnbeta.com/view/" + str(one_content.link)[str(one_content.link).rfind('/') + 1:]
-                        else:
-                            link = one_content.link
-                        self.rss_title_list[feed_name.upper()]["title_list"].append({
-                            "title": one_content.title,
-                            "link": link,
-                            "icon": feed_name,
-                            "pub_time": "{}-{}-{} {}:{}".format(one_content.published_parsed[0], one_content.published_parsed[1], one_content.published_parsed[2], one_content.published_parsed[3], one_content.published_parsed[4])
-                        })
-
-                    self.rss_title_list[feed_name.upper()]['timestamp'] = datetime.datetime.now()
+            if param == "latest":
+                self.refresh_rss(feed_name)
+                start_idx = 0
+                end_idx = 20
+            else:
+                if self.rss_title_list[feed_name.upper()]["timestamp"] is None or (datetime.datetime.now() - self.rss_title_list[feed_name.upper()]["timestamp"]).seconds > (10 * 60):
+                    self.refresh_rss(feed_name)
+                    start_idx = 0
+                    end_idx = 20
+                else:
+                    start_idx = int(param) * 20
+                    end_idx = start_idx + 20
 
             if int(start_idx) < 0 or int(end_idx) > self.rss_title_list[feed_name.upper()]["title_list"].__len__():
-                self.write(json.dumps([]))
+                self.set_status(500)
+                self.write("")
                 self.finish()
                 return
 
@@ -58,3 +78,4 @@ class RssTitleHandler(BaseHttpHandler):
             logging.error("[%s]RssTitleHandler handle exception:%s", self.trans_id, ex)
             self.set_status(500)
             self.write("")
+            self.finish()

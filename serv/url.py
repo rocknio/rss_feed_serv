@@ -7,7 +7,6 @@ from serv.rss_content import RssContentHandler
 __author__ = "Johnny"
 
 app_handlers = [
-    (r'/rss_title/(.*)/(.*)/(.*)', RssTitleHandler),
-    (r'/rss_title/(.*)', RssTitleHandler),
+    (r'/rss_title/(.*)/(.*)', RssTitleHandler),
     (r'/rss_content/(.*)', RssContentHandler),
 ]
